@@ -1,0 +1,87 @@
+---
+title: ""
+author: ""
+date: ""
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(data.table)
+library(xts)
+library(ggplot2)
+library(fasttime) #for fastPosixct
+Sys.setenv(TZ="Asia/Kolkata")
+library(scales)
+library(plotly)
+```
+
+```{r maincode, echo=FALSE}
+energydata <- "/Volumes/MacintoshHD2/Users/haroonr/Detailed_datasets/aravali_iitb/year2016_data/hourly/onlyservyed_flats.csv"
+df <- fread(energydata)
+dfs <-  xts(df[,2:dim(df)[2]],fastPOSIXct(df$timestamp)-19800)
+weatherdat <- "/Volumes/MacintoshHD2/Users/haroonr/Detailed_datasets/kresit_iitb/weather/hourlyweather_complete2016.csv"
+df_masum <- fread(weatherdat)
+df_masum_xts <- xts(df_masum[,2:dim(df_masum)[2]],fastPOSIXct(df_masum$timestamp)-19800)
+```
+
+The paper titled, "Computing Electricity Consumption Profiles from Household Smart Meter Data" mentions novelty of their approach in computing household profiles on basis of 
+
+1. Removing the effect of external temperature on the hourly power consumption
+2. Removing outliers beforehand 
+
+These points make sense because they have data of more than one year, and the variation in temperature across the year is clear as shown in below Figure. This plot shows variation in temperature and consumption of a home for continous one year at 12 Mid-Noon.
+
+
+```{r Parxfigure, fig.width=10, fig.height=5,echo=FALSE}
+library(png)
+library(grid)
+img <- readPNG("/Volumes/MacintoshHD2/Users/haroonr/Dropbox/R_codesDirectory/R_Codes/IIT-Bombay/rpub_pages/figure/temp_variation.png")
+ grid.raster(img)
+```
+
+### Takeaways from the paper and above plot
+
+1. The variation in temperature is large (-5 to 35 C), and due to this large variation they are able to create temperature ranges; and hence are able to show effect of each temperature range on consumption.
+2. The large varition in temperature shows clear effect on energy consumption, i.e., above 20 deg C results in linear increase in consumption.
+
+
+## Aravali Data
+For two sample apartments, I have plotted consumption vs. temperature for each hour separately across six months of data as
+
+
+```{r plot1, echo=FALSE,warning=FALSE,fig.width=12,fig.height=8}
+flatname <- 'F220'
+homedata <- dfs[,flatname]
+submat <- homedata['2016-06-02/2016-11-20 23:59:59']
+df_masum_xts <- df_masum_xts[paste0(start(submat),"/",end(submat))]
+agg_data <- cbind(submat,df_masum_xts$TemperatureC)
+agg_data$hour <- lubridate::hour(agg_data)
+fname <- flatname
+colnames(agg_data) <- c("Power","temp","hour")
+ggplot(agg_data,aes(temp,Power/1000)) +facet_wrap(~hour) +geom_point(size=0.8)+
+  ggtitle(paste0(flatname,"-all days")) +labs(y='Power(KW)',x='Temperature')
+#plot(cars)
+```
+
+```{r plot2, echo=FALSE,warning=FALSE,fig.width=12,fig.height=8}
+flatname <- 'F236'
+homedata <- dfs[,flatname]
+submat <- homedata['2016-06-02/2016-11-20 23:59:59']
+df_masum_xts <- df_masum_xts[paste0(start(submat),"/",end(submat))]
+agg_data <- cbind(submat,df_masum_xts$TemperatureC)
+agg_data$hour <- lubridate::hour(agg_data)
+fname <- flatname
+colnames(agg_data) <- c("Power","temp","hour")
+ggplot(agg_data,aes(temp,Power/1000)) +facet_wrap(~hour) +geom_point(size=0.8)+
+  ggtitle(paste0(flatname,"-all days")) +labs(y='Power(KW)',x='Temperature')
+#plot(cars)
+```
+
+### Takeaway from these two plots
+
+1. We have data from June onwards, i.e., we have data of few summer days and then it is only monsoon consumption. We do not have data for all the seasons of the year. Therefore we can not train the model proposed in previous paper, as we do not have data corresponding to all seasons of the year
+2. We have temperature variation of 10 degrees only (25 - 35 deg C). While looking at above sample plots, it seems that this temperature variation does not affect consumption directly. 
+3. There are some outliers which can be removed
+
+

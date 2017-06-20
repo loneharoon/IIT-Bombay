@@ -1,0 +1,110 @@
+---
+title: ""
+author: ""
+date: ""
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(data.table)
+library(xts)
+library(ggplot2)
+library(fasttime) #for fastPosixct
+Sys.setenv(TZ="Asia/Kolkata")
+library(scales)
+library(plotly)
+library(knitr)
+```
+The data used in the analysis is presented in below tabular format
+
+```{r maincode, echo=FALSE}
+energydata <- "/Volumes/MacintoshHD2/Users/haroonr/Detailed_datasets/aravali_iitb/year2016_data/hourly/onlyservyed_flats.csv"
+df <- fread(energydata)
+dfs <-  xts(df[,2:dim(df)[2]],fastPOSIXct(df$timestamp)-19800)
+
+bill_array <- vector()
+for( h in 1:dim(dfs)[2])
+{
+dat_flat <-  dfs[,h]
+monthwise <- split.xts(dat_flat,f="months",k=1)
+#meanenergy <- sapply(monthwise,mean,na.rm=TRUE)
+sumenergy <- sapply(monthwise,sum,na.rm=TRUE)
+#avg_monthunits <- (meanenergy*24*30)/1000
+sum_monthunits <- sumenergy/1000
+unit <- mean(sum_monthunits[2:length(sum_monthunits)]) # excluding june month
+
+if(unit <= 30)
+  { amt <- unit * 0.6
+} else if(unit <= 100){
+  amt <- 18 + (unit-30)*0.9
+} else if(unit <= 150){
+  amt <- 18 + 63 + (unit-100)*1.1
+} else if(unit <= 200){
+  amt <- 18 + 63 + 55 + (unit-150)*1.3
+} else if(unit <= 300){
+  amt <- 18 + 63 + 55 + 65 + (unit-200)*1.3
+}else{
+  amt <- 18 + 63 + 55 + 65 + 130 + (unit-300)*1.35
+}
+x = (unit) * (0.1283 - 0.4405 + 0.0904)
+y = amt * 5.81
+z =  40
+billamt <- round(x+y+z)
+#pos <- length(bill_array)+1
+bill_array[h] <- billamt
+}
+#bill_frame <- data.frame(flat = colnames(dfs),actual= bill_array)
+names(bill_array) <- colnames(dfs) 
+
+surfile <- "/Volumes/MacintoshHD2/Users/haroonr/Detailed_datasets/aravali_iitb/surveydata.csv"
+sfile <- read.csv(surfile)
+sframe <- sfile[,c(8,10)]
+sframe$flatId <- paste0('F',actual_bill=sframe$flatId)
+
+labnames <- c("lessthan500","500to1000","1001to1500","1501to2000","Above2000","dontknow")
+sframe$avgBill <- factor(sframe$avgBill,levels=labnames,labels=labnames)
+sframe$reportedBillrange <- as.numeric(sframe$avgBill)
+sframe$actualBill <- bill_array[sframe$flatId]
+
+actual_bill_range <- vector()
+for(k in 1:length(sframe$actualBill))
+{ val <- sframe$actualBill[k]
+  if(is.na(val)) {
+  actual_bill_range[k] <- NA
+  } else{
+  if(val < 500) {
+    actual_bill_range[k] <- 1
+  } else if(val < 1000){
+    actual_bill_range[k] <- 2
+  } else if(val < 1500){
+    actual_bill_range[k] <- 3
+  } else if(val < 2000){
+    actual_bill_range[k] <- 4
+  } else {
+    actual_bill_range[k] <- 5
+  }
+  }
+}
+sframe$actualBillrange <- actual_bill_range
+lframe <- sframe[!is.na(sframe$actualBillrange),]
+```
+
+```{r kable,echo=FALSE}
+colnames(lframe) <- c("flatId","reportedBill","reportedBillrange","actualBill","actualBillrange")
+kable(lframe)
+#kable(table(lframe$reportedBillrange==lframe$actualBillrange))
+```
+
+The average bill amount is 
+```{r bill, echo=FALSE}
+mean(lframe$actualBill)
+```
+
+On comparing columns, "reportedBillrange" and "actualBillrange", we found
+
+```{r kablefunction,echo=FALSE}
+l <- table(lframe$reportedBillrange==lframe$actualBillrange)
+print(l)
+```
+This means 16 consumers know correctly how much they are charged. Out of 25 consumers who answered wrongly, 5 consumers responded that they "don't know". In conclusion, 16 consumers answered correctly and 20 (25-5) answered wrongly. 

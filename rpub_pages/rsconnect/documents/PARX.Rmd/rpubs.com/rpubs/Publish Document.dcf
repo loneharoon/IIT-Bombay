@@ -1,0 +1,8 @@
+name: Publish Document
+title:
+account: rpubs
+server: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/235745/d5115c963989423bb0b447a886e66050
+bundleId: https://api.rpubs.com/api/v1/document/235745/d5115c963989423bb0b447a886e66050
+url: http://rpubs.com/haroon/235745
+when: 1481891322.96968
