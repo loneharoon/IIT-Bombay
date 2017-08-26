@@ -1356,9 +1356,12 @@ normality_test <- function() {
 }
 
 AravaliSurvey_functions <- function() {
-  # all functions related to CHI extended abstract paper
+  # This function computes all the statistics presented in the BuildSys paper.
+  library(xts)
+  library(data.table)
+  library(fasttime)
 compute_bill_fromdata_AravaliSurvey <- function() {
-  
+
   energydata <- "/Volumes/MacintoshHD2/Users/haroonr/Detailed_datasets/aravali_iitb/year2016_data/hourly/onlyservyed_flats.csv"
   df <- fread(energydata)
   dfs <-  xts(df[,2:dim(df)[2]],fastPOSIXct(df$timestamp)-19800)
@@ -1394,6 +1397,7 @@ compute_bill_fromdata_AravaliSurvey <- function() {
     #pos <- length(bill_array)+1
     bill_array[h] <- billamt
   }
+  
   #bill_frame <- data.frame(flat = colnames(dfs),actual= bill_array)
   names(bill_array) <- colnames(dfs) 
   
@@ -1429,6 +1433,12 @@ compute_bill_fromdata_AravaliSurvey <- function() {
   }
   sframe$actualBillrange <- actual_bill_range
   lframe <- sframe[!is.na(sframe$actualBillrange),]
+  table(lframe$reportedBillrange==lframe$actualBillrange)
+  ## LOGIC to check how inaccurate where these consumers
+  df_sub <- subset(lframe, select=c("reportedBillrange","actualBillrange"))
+  df_sub$difference <- df_sub$actualBillrange - df_sub$reportedBillrange
+  sub <- df_sub[!df_sub$difference==0,]
+  ggplot(sub,aes(x=1,y=difference)) + geom_violin() + geom_jitter(height = 0, width = 0.1)
   
 }
 
@@ -1484,7 +1494,31 @@ compute_peakcorrectionpercentage_AravaliSurvey <- function() {
   sframe$actualtimeRange <- actual_peak_range
   lframe <- sframe[!is.na(sframe$actualtimeRange),]
   table(lframe$reportedtimeRange==lframe$actualtimeRange)
+  ## LOGIC to check how inaccurate where these consumers
+  df_sub2 <- subset(lframe, select=c("reportedtimeRange","actualtimeRange"))
+  df_sub2$difference <- df_sub2$actualtimeRange - df_sub2$reportedtimeRange
+   sub2 <- df_sub2[!df_sub2$difference==0,]
+  ggplot(sub2,aes(x=1,y=difference)) + geom_violin() + geom_jitter(height = 0, width = 0.1)
 } 
+compute_range_breakup <- function(){
+  # This plot was asked during BuildSys spherding process
+  # RUN above two functions compute_bill_fromdata_AravaliSurvey() and compute_peakcorrectionpercentage_AravaliSurvey()
+  # to get the data for plotting 
+  ## sub and sub2 are obtained from above functions
+  peak_awareness <- c(sub2$difference)
+  bill_awareness <- c(sub$difference)
+  dframe <- cbind(peak=peak_awareness,bill=c(bill_awareness,rep(NA,length(peak_awareness-bill_awareness))))
+  colnames(dframe) <- c("Peak Awareness","Bill Awareness")
+  dframe_long <- reshape2::melt(dframe)
+  
+  g <- ggplot(dframe_long,aes(x=Var2,y=value)) + geom_violin()+ geom_jitter(height = 0, width = 0.1,na.rm = TRUE,size=0.1)
+  g <- g + labs(x="",y="Range") + scale_y_continuous(breaks=seq(-5,5,1))
+  g <- g + theme(axis.text = element_text(size=10,color="black"))
+  g
+  setwd("/Volumes/MacintoshHD2/Users/haroonr/Dropbox/Writings/Accepted/buildsys_2017_surve/figures/")
+  ggsave(filename="violin.pdf",width = 3, height = 3,units = c("in"))
+}
+
 
 compute_survey_profiles_AravliSurvey <- function() {
   # this function is used to find profiles shown in chi poster
