@@ -26,7 +26,7 @@ sensitivity_analysis_sigma_main <- function(){
   g <- g +  labs(x='Standard Deviation',y = "Consistency Score")  + theme_grey(base_size = 9) 
   g <- g + theme(axis.text = element_text(color="Black",size=9),legend.position = "top",legend.title=element_blank(),legend.background = element_rect(fill = alpha('white',0.3)),legend.text = element_text(size = 9)) + scale_x_continuous(breaks = pretty_breaks(n=6))
   g
-  # ggsave("sigma_sens.pdf", width = 6, height = 6,units="cm")
+  # ggsave("sigma_sens2.pdf", width = 8, height = 6,units="cm")
 }
 
 sensitivity_analysis_sigma  <- function(dat) {
@@ -94,10 +94,9 @@ historical_days_effect_main <- function(){
   g <- g +  labs(x=' Historical Days (#)',y = "Consistency Score")  + theme_grey(base_size = 9) 
   g <- g + theme(axis.text = element_text(color="Black",size=9),legend.position = "top",legend.title=element_blank(),legend.background = element_rect(fill = alpha('white',0.3)),legend.text = element_text(size = 9)) + scale_x_continuous(breaks = pretty_breaks(n=6))
   g
-  # ggsave("hist_days.pdf", width = 6, height = 6,units="cm")
+  # ggsave("hist_days2.pdf", width = 8, height = 6,units="cm")
   
 }
-
 
 
 sampling_effect <- function(){
@@ -136,7 +135,7 @@ sampling_effect <- function(){
   g <- g +  labs(x=' Sample Interval (minutes)',y = "Consistency Score")  + theme_grey(base_size = 9) 
   g <- g + theme(axis.text = element_text(color="Black",size=9),legend.position = "top",legend.title=element_blank(),legend.background = element_rect(fill = alpha('white',0.3)),legend.text = element_text(size = 9)) + scale_x_continuous(breaks = pretty_breaks(n=6))
   g
-  # ggsave("sample_interval.pdf", width = 6, height = 6,units="cm")
+  # ggsave("sample_interval2.pdf", width = 8, height = 6,units="cm")
   
 }
 
